@@ -4,8 +4,10 @@ import { doctors } from "../assets/assets"
 export const AppContext = createContext();  // createContext() returns an object that can be shared across the entire app.
 
 const AppContextProvider = (props) => {
+    const currencySymbol = '$';
+
     const value = {
-        doctors
+        doctors, currencySymbol
     };
 
     return (
