@@ -36,7 +36,7 @@ const doctorSchema = new mongoose.Schema({
     },
     available: {
         type: Boolean,
-        required: true
+        default: true
     },
     fees: {
         type: Number,
@@ -59,3 +59,43 @@ const doctorSchema = new mongoose.Schema({
 const doctorModel = mongoose.models.doctor || mongoose.model("doctor", doctorSchema);
 
 export default doctorModel;
+
+{/* 
+    NOTE: 2 Suggestions (Will apply/check it little later)
+    
+    1. address: {
+         type: Object,     // No structure! Accepts ANY object
+         required: true
+       }
+       
+       address: {
+         street: String,
+         city: String
+       },
+    
+    2.  date: { type: Number, required: true },   // Unclear purpose. Timestamp? Slot number? What does it represent ?
+        date: { type: Date, default: Date.now },  // Clear purpose
+*/}    
+
+{/*
+    How Mongoose stores models internally:
+    When we write:
+    mongoose.model("Doctor", doctorSchema);
+
+    Mongoose internally stores the model like this:
+    mongoose.models = {
+  Doctor: Model,
+};
+
+    Important
+
+The key name is exactly the model name you pass
+
+It is case-sensitive
+
+
+    mongoose.model("Doctor", ...)
+
+    creates mongoose.models.Doctor
+    NOT mongoose.models.doctor
+*/}
