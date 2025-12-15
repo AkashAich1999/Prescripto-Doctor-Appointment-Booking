@@ -2,6 +2,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
+import jwt from "jsonwebtoken";
 
 // API : Add New Doctor
 export const addDoctor = async (req, res) => {
@@ -69,6 +70,37 @@ export const addDoctor = async (req, res) => {
 
         // Handle server errors.
         return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+// API : Admin Login
+export const loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+         // Step 1: Check admin email
+        if (email !== process.env.ADMIN_EMAIL) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        // Step 2: Compare entered password with hashed password
+        const isPasswordMatch = await bcrypt.compare( password, process.env.ADMIN_PASSWORD_HASH );
+
+        if (!isPasswordMatch) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        // Step 3: Generate JWT token
+        const token = jwt.sign({ role: "admin", email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+            
+        // Step 4: Send success response
+        return res.status(200).json({ success: true, token });
+        
+    } catch (error) {
+        console.log(error);
+
+        // Handle server errors.
+        return res.status(500).json({ success: false, message: "Server error" });
     }
 }
 
