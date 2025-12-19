@@ -104,6 +104,17 @@ export const loginAdmin = async (req, res) => {
     }
 }
 
+// API to Get All Doctors from Database. (for Admin Panel)
+export const allDoctors = async (req, res) => {
+  try {
+    const doctors = await doctorModel.find({}).select("-password");
+    return res.status(200).json({ success: true, doctors });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Failed to fetch doctors" });
+  }
+};
+
 {/* 
     Q. What is req.file ?
     => req.file is an object that contains the information of a single uploaded file when using Multer’s upload.single() middleware.

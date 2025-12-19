@@ -12,6 +12,7 @@ const authAdmin = async (req, res, next) => {
 
         // Step 2: Extract token
         const token = authHeader.split(" ")[1];
+        console.log("Auth Header:", req.headers.authorization);
 
         // Step 3: Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
