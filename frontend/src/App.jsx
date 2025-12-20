@@ -11,6 +11,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import { ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   return (
@@ -27,6 +28,10 @@ const App = () => {
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/appointment/:docId" element={<Appointment />} />
+
+        {/*  Add a wildcard route (*)  */}
+        {/*  404 Route (MUST be last)  */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
     </div>

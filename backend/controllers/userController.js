@@ -63,16 +63,16 @@ export const loginUser = async (req, res) => {
         const user = await userModel.findOne({ email });
 
         if (!user) {
-            return res.json({ success:false, message:"User does not Exists." });
+            return res.status(404).json({ success:false, message:"User does not Exists." });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (isMatch) {
-            const token = jwt.sign({ id:user._id }, process.env.JWT_SECRET);
-            res.json({ success:true, token });
+            const token = jwt.sign({ id:user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+            res.status(200).json({ success:true, token });
         } else {
-            res.json({ success:false, message: "Invalid Credentials" });
+            res.status(401).json({ success:false, message: "Invalid Credentials" });
         }
 
     } catch (error) {

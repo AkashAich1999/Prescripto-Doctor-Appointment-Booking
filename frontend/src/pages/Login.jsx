@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -10,9 +10,15 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
-  const { setToken, backendUrl } = useContext(AppContext);
+  const { token, setToken, backendUrl } = useContext(AppContext);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (token) {
+      navigate("/"); // or /my-profile
+    }
+  }, [token]);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -37,10 +43,12 @@ const Login = () => {
       }
 
       if (data.success) {
-        setToken(data.token);   // AppContext handles localStorage.
+        setToken(data.token); // AppContext handles localStorage.
         console.log("Token from backend:", data.token);
         toast.success(
-          state === "Sign Up" ? "Account created successfully" : "Login successful"
+          state === "Sign Up"
+            ? "Account created successfully"
+            : "Login successful"
         );
         navigate("/"); // or "/my-profile"
       } else {
