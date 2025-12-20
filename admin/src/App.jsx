@@ -10,6 +10,7 @@ import Dashboard from "./pages/Admin/Dashboard";
 import AllAppointments from "./pages/Admin/AllAppointments";
 import AddDoctor from "./pages/Admin/AddDoctor";
 import DoctorsList from "./pages/Admin/DoctorsList";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   const { token } = useContext(AdminContext);
@@ -26,6 +27,8 @@ const App = () => {
           <Route path="/all-appointments" element={<AllAppointments />} />
           <Route path="/add-doctor" element={<AddDoctor />} />
           <Route path="/doctor-list" element={<DoctorsList />} />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </div>
