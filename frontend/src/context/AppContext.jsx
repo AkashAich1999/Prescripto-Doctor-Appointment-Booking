@@ -9,6 +9,7 @@ const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [doctors, setDoctors] = useState([]);
   const [token, setToken] = useState(localStorage.getItem("userToken") || "");
+  const [userData, setUserData] = useState(null);
 
   // Sync token with localStorage
   useEffect(() => {
@@ -25,6 +26,14 @@ const AppContextProvider = (props) => {
     getDoctorsData();
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      loadUserProfileData();
+    } else {
+      setUserData(null);
+    }
+  }, [token]);
+
   const getDoctorsData = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
@@ -35,7 +44,32 @@ const AppContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Failed to load doctors");
+      toast.error("Failed to load Doctors");
+      console.log(error);
+    }
+  };
+
+  const loadUserProfileData = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/user/get-profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("TOKEN:", token);
+      console.log("AUTH HEADER:", `Bearer ${token}`);
+
+      if (data.success) {
+        setUserData(data.userData);
+      } else {
+        toast.error(data.message || "Failed to load profile");
+      }
+    } catch (error) {
+      toast.error("Failed to load User Profile");
       console.log(error);
     }
   };
@@ -46,6 +80,9 @@ const AppContextProvider = (props) => {
     token,
     setToken,
     backendUrl,
+    userData,
+    setUserData,
+    loadUserProfileData,
   };
 
   return (

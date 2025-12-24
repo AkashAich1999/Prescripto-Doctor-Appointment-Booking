@@ -24,11 +24,12 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        default: "Not Selected"
+        enum: ["Male", "Female"],
+        default: null
     },
     dob: {
         type: String,
-        default: "Not Selected"
+        default: null
     },
     phone: {
         type: String,

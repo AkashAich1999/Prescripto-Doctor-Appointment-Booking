@@ -14,6 +14,7 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  // auto-redirect if user is already logged in
   useEffect(() => {
     if (token) {
       navigate("/"); // or /my-profile
