@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
+import doctorModel from "../models/doctorModel.js";
+import appointmentModel from "../models/appointmentModel.js";
 
 // API to Register User.
 export const registerUser = async (req, res) => {
@@ -146,6 +148,63 @@ export const updateProfile = async (req, res) => {
   }
 }
 
+// API to Book Appointment.
+export const bookAppointment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { docId, slotDate, slotTime } = req.body;
+
+    const docData = await doctorModel.findById(docId).select("-password");
+
+    // console.log("docId received:", docId);
+    // console.log("docData found:", docData);
+    
+    if (!docData || !docData?.available) {
+      return res.status(400).json({ success:false, message:"Doctor Not Available." });
+    }
+
+    let all_slots_booked = { ...docData.slots_booked };
+
+    // Slot Availability Check
+    if (all_slots_booked[slotDate]?.includes(slotTime)) {
+      return res.status(400).json({ success: false, message: "Slot Not Available." });
+    }
+
+    if (!all_slots_booked[slotDate]) {
+      all_slots_booked[slotDate] = [];
+    }
+    all_slots_booked[slotDate].push(slotTime);
+
+    const userData = await userModel.findById(userId).select("-password");
+    
+    const docDataObj = docData.toObject();
+    delete docDataObj.slots_booked;
+
+    const appointmentData = {
+      userId,
+      docId,
+      userData,
+      docData: docDataObj,
+      amount: docData.fees,
+      slotTime,
+      slotDate,
+      date:Date.now()
+    }
+
+    const newAppointment = new appointmentModel(appointmentData);
+    await newAppointment.save();
+
+    // Save New Slots Data in docData.
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked: all_slots_booked });
+
+    res.status(200).json({ success:true, message:"Appointment Booked" })
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
 {/* 
   JSON.parse() converts a JSON-formatted string into a JavaScript object (or array, number, etc.).
   
@@ -184,4 +243,45 @@ export const updateProfile = async (req, res) => {
   }
 
 
+*/}
+
+
+{/*
+  CRITICAL DIFFERENCE: Reference vs Copy! 
+  
+  1. let all_slots_booked = docData.slots_booked;
+
+     // SAME REFERENCE (Dangerous!)
+     let all_slots_booked = docData.slots_booked;
+     all_slots_booked[0] = "NEW";  // Changes ORIGINAL docData too!
+
+     What happens:
+     • all_slots_booked points to the SAME object in memory.
+     • Mutating one = mutating both.
+     • Side effects everywhere!
+
+  2. const all_slots_booked = { ...docData.slots_booked };
+     
+     // INDEPENDENT COPY (Safe!)
+     const all_slots_booked = { ...docData.slots_booked };
+     all_slots_booked[0] = "NEW";  // Original docData UNCHANGED!
+     
+     What happens:
+     • { ... } creates shallow copy (new object)
+     • Changes to copy don't affect original 
+
+*/}
+
+{/*
+    delete docData.slots_booked;  
+    This means are mutating a mongoose document, which is wrong.  
+
+    Why this is wrong:
+    • docData is a mongoose document.
+    • Mutating it directly is unsafe.
+
+    const docDataObj = docData.toObject();
+    delete docDataObj.slots_booked;
+    
+    Then use docDataObj, NOT docData.
 */}

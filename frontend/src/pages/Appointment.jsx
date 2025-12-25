@@ -1,13 +1,17 @@
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const Appointment = () => {
   const {docId} = useParams();
-  const {doctors, currencySymbol} = useContext(AppContext);
+  const {doctors, currencySymbol, backendUrl, token, getDoctorsData} = useContext(AppContext);
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
@@ -67,6 +71,61 @@ const Appointment = () => {
       setDocSlots(prev => ([...prev, timeSlots]));
     }
   }
+
+  const bookAppointment = async () => {
+    // 1. AUTH Check.
+    if (!token) {
+      toast.warn("Login to Book Appointment");
+      navigate("/login");   // Redirect to login
+      return;   // Stop execution
+    }
+
+    // 2. Slot validations
+    if (!slotTime) {
+      toast.warn("Please select a time slot");
+      return;
+    }
+
+    try {
+      // 3. Extract DATE from Selected Slot.
+      const date = docSlots[slotIndex][0].datetime;
+      console.log(date);
+
+      // 4. Format date as "DD_MM_YYYY"
+      let day = date.getDate();         // 25
+      let month = date.getMonth() + 1;  // Jan --> 0, Dec --> 11 Therefore, we need +1. (JS months 0-indexed!)
+      let year = date.getFullYear();    // 2025
+
+      const slotDate = `${day}_${month}_${year}`;  // "25_12_2025"
+      console.log(slotDate);   // Debug: "25_12_2025"
+
+      // 5. API call
+      const { data } = await axios.post(
+        `${backendUrl}/api/user/book-appointment`,
+        { 
+          docId, slotDate, slotTime
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // 6. Response handling
+      if (data.success) {
+        toast.success(data.message);
+        getDoctorsData();
+        navigate("/my-appointments");
+      } else {
+        toast.error(data.message);
+      }
+
+    } catch (error) {
+      console.error("Booking Error:", error);
+      toast.error(error.response?.data?.message || "Booking Failed");
+    }
+  };
 
   useEffect(() => {
     fetchDocInfo();
@@ -134,7 +193,7 @@ const Appointment = () => {
             </p>
           ))}
         </div>
-        <button className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6">Book an appointment</button>
+        <button onClick={bookAppointment} className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6">Book an appointment</button>
   
       </div>
 
@@ -173,3 +232,45 @@ export default Appointment;
   • Suppose, item[0].datetime.getDay() returns 5,
   • Then, daysOfWeek[5] => 'FRI' 
  */
+
+ /*
+  setDocSlots(prev => ([...prev, timeSlots]));
+        ↑        ↑       ↑        ↑
+        |        |       |        |
+    Update  Previous  Spread    NEW day's slots
+    state     state   existing  (timeSlots array)
+               ↓       ↓
+         Function    Create NEW array
+           ↓          with old + new
+    React-safe update!
+ 
+ */ 
+
+/*
+    docSlots = [                 // Array of 7 DAYS
+      [                          // Day 1 (Today)
+        {datetime: Date, time: "10:00"},  // Slot 0
+        {datetime: Date, time: "10:30"},  // Slot 1 ← User clicked this!
+        {datetime: Date, time: "11:00"},  // Slot 2
+        ...
+      ],
+      [                          // Day 2
+        {datetime: Date, time: "10:00"},
+        ...
+      ]
+    ]
+
+
+    Q. Explain the Following Part:
+       const date = docSlots[slotIndex][0].datetime;  ?
+    => 
+       User clicks Day 2, Slot 1 ("10:30")
+       
+       slotIndex = 1;  // Selected Slot Position in Day.
+
+       docSlots[slotIndex]      // ❌ WRONG: Gets DAY (array)
+       docSlots[slotIndex][0]   // ❌ WRONG: Gets FIRST slot of that day
+
+       ✅ CORRECT: Gets SELECTED slot's Date
+       const date = docSlots[slotIndex][0].datetime;   
+*/
