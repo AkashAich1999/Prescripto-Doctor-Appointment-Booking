@@ -205,6 +205,20 @@ export const bookAppointment = async (req, res) => {
   }
 }
 
+// API to Get User Appointments for Frontend (my-appointments) Page 
+export const listAppointment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const appointments = await appointmentModel.find({ userId }).sort({ date: -1 });
+
+    res.status(200).json({ success:true, appointments });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+
 {/* 
   JSON.parse() converts a JSON-formatted string into a JavaScript object (or array, number, etc.).
   
