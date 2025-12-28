@@ -4,7 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const MyAppointments = () => {
-  const { backendUrl, token } = useContext(AppContext);
+  const { backendUrl, token, getDoctorsData } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -38,6 +38,34 @@ const MyAppointments = () => {
     }
   };
 
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      // console.log(appointmentId);
+      const {data} = await axios.post(`${backendUrl}/api/user/cancel-appointment`, 
+        {appointmentId},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getUserAppointments();
+        getDoctorsData();
+      } else {
+        toast.error(data.message);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        error.response?.data?.message || "Failed to Cancel Appointment"
+      );
+    }
+  }
+
   useEffect(() => {
     if (token) {
       getUserAppointments();
@@ -56,7 +84,7 @@ const MyAppointments = () => {
               </div>
               <div className="text-sm text-zinc-600 flex-1">
                 <p className="text-neutral-800 font-semibold">{item.docData.name}</p>
-                <p>{item.speciality}</p>
+                <p>{item.docData.speciality}</p>
                 <p className="text-zinc-700 font-medium mt-1">Address:</p>
                 <p className="text-xs">{item.docData.address.line1}</p>
                 <p className="text-xs">{item.docData.address.line2}</p>
@@ -65,7 +93,17 @@ const MyAppointments = () => {
               <div></div>
               <div className="flex flex-col gap-2 justify-end">
                 <button className="text-stone-500 text-sm text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">Pay Online</button>
-                <button className="text-stone-500 text-sm text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300">Cancel Appointment</button>
+                <button 
+                  disabled={item.cancelled} 
+                  onClick={() => cancelAppointment(item._id)} 
+                  className={`text-sm text-center sm:min-w-48 py-2 border rounded transition-all duration-300
+                    ${
+                      item.cancelled
+                        ? "text-stone-500 bg-gray-100 cursor-not-allowed"
+                        : "text-red-500 border border-red-500 hover:bg-red-600 hover:text-white"
+                    }
+                  `}
+                >{item.cancelled ? "Cancelled" : "Cancel Appointment"}</button>
               </div>
             </div>
           ))
@@ -76,3 +114,5 @@ const MyAppointments = () => {
 }
 
 export default MyAppointments;
+
+// className="text-stone-500 text-sm text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300">Cancel Appointment</button>

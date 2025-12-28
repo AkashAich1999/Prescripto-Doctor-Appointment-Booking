@@ -218,6 +218,61 @@ export const listAppointment = async (req, res) => {
   }
 }
 
+// API to Cancel Appointment
+export const cancelAppointment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { appointmentId } = req.body;
+
+    // 1. Find Appointment
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Appointment Not Found" });
+    }
+
+    // 2. Authorization Check (User can Cancel Only Own Appointment)
+    if (appointment.userId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized Action" });
+    }
+
+    // 3. Prevent Double Cancellation
+    if (appointment.cancelled) {
+      return res.status(400).json({ success: false, message: "Appointment Already Cancelled" });
+    }
+
+    // 4. Mark Appointment as Cancelled
+    appointment.cancelled = true;
+    await appointment.save();
+
+    // 5. Remove Slot from doctor's slots_booked
+    const doctor = await doctorModel.findById(appointment.docId);
+
+    if (doctor && doctor.slots_booked) {
+      const { slotDate, slotTime } = appointment;
+
+      if (doctor.slots_booked[slotDate]) {
+        doctor.slots_booked[slotDate] = doctor.slots_booked[slotDate].filter(time => time !== slotTime);
+
+        // Remove date key if empty
+        if (doctor.slots_booked[slotDate].length === 0) {
+          delete doctor.slots_booked[slotDate];
+        }
+
+        // THIS LINE FIXES EVERYTHING
+        doctor.markModified("slots_booked");
+        await doctor.save();
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "Appointment Cancelled Successfully", updatedDoctor:doctor });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
 
 {/* 
   JSON.parse() converts a JSON-formatted string into a JavaScript object (or array, number, etc.).
@@ -299,3 +354,36 @@ export const listAppointment = async (req, res) => {
     
     Then use docDataObj, NOT docData.
 */}
+
+/*
+  In the following line: 
+    if (appointment.userId.toString() !== req.userId)  
+  Why we are using toString() ?
+
+  In MongoDB (via Mongoose):
+    appointment.userId
+  is NOT a string.
+  
+  It is a MongoDB ObjectId:
+    ObjectId("693c3241e1b4198dc06c7964")
+  Type:
+    typeof appointment.userId   // "object" 
+
+  What is req.userId ?
+  From your JWT middleware, you usually set:
+    req.userId = decodedToken.id;
+  That is a string:
+    "693c3241e1b4198dc06c7964"
+  Type:
+    typeof req.userId   // "string"  
+*/
+
+/*
+  doctor.markModified("slots_booked");
+
+  Why it worked ?
+  • slots_booked is a nested object
+  • Mongoose does not detect direct mutations inside plain objects
+  • Without markModified, doctor.save() silently does nothing
+  • With it, Mongoose forces MongoDB to update the field
+*/

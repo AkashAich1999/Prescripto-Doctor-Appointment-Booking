@@ -18,15 +18,9 @@ const Appointment = () => {
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState('');
 
-  const fetchDocInfo = async () => {
-    const docInfo = doctors.find(doc => doc._id === docId);
-    setDocInfo(docInfo);
-    // console.log(docInfo);
-  }
-
   // generate 7 days of time slots (today + next 6 days), 
   // where each day has 30-minute intervals from 10:00 AM to 9:00 PM.
-  const getAvailableSlots = async () => {
+  const getAvailableSlots = () => {
     setDocSlots([]);  // Before generating slots, we Clear the previous data.
 
     // getting today’s date.
@@ -34,11 +28,11 @@ const Appointment = () => {
 
     for (let i = 0; i < 7; i++) { // Loop for 7 days.
       // Create current date for each loop.
-      let currentDate = new Date();
+      let currentDate = new Date(today);
       currentDate.setDate(today.getDate() + i);
 
       // Set the END time of the day (9 PM).
-      let endTime = new Date();
+      let endTime = new Date(today);
       endTime.setDate(today.getDate() + i);
       endTime.setHours(21, 0, 0, 0);  // So every day ends at 21:00 / 9 PM.
 
@@ -64,7 +58,13 @@ const Appointment = () => {
         const slotDate = `${day}_${month}_${year}`;
         const slotTime = formattedTime; 
 
-        const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true;
+        /* const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true; */
+
+        const bookedSlots = docInfo?.slots_booked?.[slotDate] || [];
+        const isSlotAvailable = !bookedSlots.includes(formattedTime);
+
+        console.log("DB slots:", docInfo.slots_booked);
+        console.log("Checking:", slotDate, slotTime);
 
         if (isSlotAvailable) {
           // add slot to array.
@@ -139,16 +139,27 @@ const Appointment = () => {
   };
 
   useEffect(() => {
-    fetchDocInfo();
-  }, [doctors, docId]);
+    if (docInfo) {
+      setSlotIndex(0);
+      setSlotTime("");
+      getAvailableSlots();
+    }
+  }, [docInfo]);
 
   useEffect(() => {
-    getAvailableSlots();
-  }, [docInfo]);
+    if (doctors.length > 0 && docId) {
+      const doc = doctors.find((doc) => doc._id === docId);
+      setDocInfo(doc);
+    }
+  }, [doctors, docId]);
 
   useEffect(() => {
     console.log(docSlots);
   }, [docSlots]);
+
+  useEffect(() => {
+    console.log("Updated docInfo:", docInfo?.slots_booked);
+  }, [docInfo]);
 
   return docInfo && (
     <div>
