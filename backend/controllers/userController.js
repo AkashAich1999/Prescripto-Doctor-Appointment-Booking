@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+import razorpay from "razorpay";
+import crypto from "crypto";
 
 // API to Register User.
 export const registerUser = async (req, res) => {
@@ -273,6 +275,113 @@ export const cancelAppointment = async (req, res) => {
   }
 }
 
+const razorpayInstance = new razorpay({
+  key_id:process.env.RAZORPAY_API_KEY,
+  key_secret:process.env.RAZORPAY_API_SECRET
+});
+
+// API to Make Payment of Appointment using Razorpay. 
+export const paymentRazorpay = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { appointmentId } = req.body;
+
+    // 1. Fetching Appointment.
+    const appointmentData = await appointmentModel.findById(appointmentId);
+
+    if (!appointmentData) {
+      return res.status(404).json({ success: false, message: "Appointment Not Found" });
+    }
+
+    // 2. Checking Ownership.
+    if (appointmentData.userId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // 3. Check Cancellation.
+    if (appointmentData.cancelled) {
+      return res.status(400).json({ success: false, message: "Appointment Already Cancelled" });
+    }
+
+    // Creating Razorpay options.
+    const options = {
+      amount: appointmentData.amount * 100,  // amount in paise
+      currency: process.env.CURRENCY || "INR",
+      receipt: appointmentId
+    }
+
+    // Creating Razorpay order.
+    const order = await razorpayInstance.orders.create(options);
+
+    res.status(200).json({ success:true, order })
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Payment Initiation Failed" });
+  }
+};
+
+// API to Verify Payment of Razorpay.
+export const verifyRazorpay = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    
+    // 1. Create EXPECTED Signature string (Generate Signature)
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    // "order_xyz123|pay_abc456" ← Razorpay's exact format!
+
+    // 2. Generate HMAC-SHA256 Signature.
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_API_SECRET)  // Secret key
+      .update(body)                                           // Data to sign
+      .digest("hex");                                         // Hex output
+    // "a1b2c3d4e5f67890..." ← Matches Razorpay's sent signature!
+
+    // 3. Compare Signatures
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Invalid payment signature" });
+    }
+
+    // 4. Fetch order to get appointmentId (receipt)
+    const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
+    console.log(orderInfo);
+
+    if (orderInfo.status !== "paid") {
+      return res.status(400).json({ success: false, message: "Payment Not Completed" });
+    }
+
+    // 5. Fetch Appointment
+    // orderInfo.receipt: appointmentId
+    // await appointmentModel.findByIdAndUpdate(orderInfo.receipt, {
+    //   payment: true
+    // });  
+
+    const appointment = await appointmentModel.findById(orderInfo.receipt);
+
+    if (!appointment) {
+      return res.status(404).json({ success:false, message:"Appointment Not Found" });
+    }
+
+    if (appointment.userId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (appointment.payment) {
+      return res.status(400).json({ success: false, message: "Payment Already Verified" });
+    }
+
+    // 5. Mark payment successful
+    appointment.payment = true;
+    await appointment.save();
+
+    res.status(200).json({ success: true, message: "Payment Verified Successfully" });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Payment Verification Failed" });
+  }
+}
 
 {/* 
   JSON.parse() converts a JSON-formatted string into a JavaScript object (or array, number, etc.).
@@ -386,4 +495,65 @@ export const cancelAppointment = async (req, res) => {
   • Mongoose does not detect direct mutations inside plain objects
   • Without markModified, doctor.save() silently does nothing
   • With it, Mongoose forces MongoDB to update the field
+*/
+
+/*
+  Big idea (in simple words) :
+
+  Razorpay and our Backend both know ONE Secret thing:
+    RAZORPAY_API_SECRET
+  No one else knows it.
+
+  So Razorpay says:
+    “I will Sign the payment details using this Secret.
+    You Verify the Signature using the SAME Secret.”
+
+  If signatures match → ✅ payment is genuine
+  If not → ❌ someone tampered or faked data
+*/
+/*
+  What Razorpay actually does (important):
+
+  When payment succeeds, Razorpay secretly does this on THEIR server:
+    signature = HMAC_SHA256(
+      razorpay_order_id + "|" + razorpay_payment_id,
+      RAZORPAY_API_SECRET
+    )
+
+  Razorpay sends after Payment success:
+    {
+      razorpay_order_id: "order_Lxxx",
+      razorpay_payment_id: "pay_Lxxx",
+      razorpay_signature: "abc123..."
+    }
+    razorpay_signature is created by Razorpay, not by us.
+
+
+  Now we must do the same calculation and compare.
+  Now let’s decode this line piece by piece:
+
+  Line 1: 
+    crypto.createHmac("sha256", process.env.RAZORPAY_API_SECRET);
+  Meaning:
+  • Use SHA-256 algorithm.
+  • Use your Razorpay Secret Key.
+  • Prepare to sign data.
+  This is our Private Stamp Maker.  
+
+  Line 2:
+    .update(body)
+  Meaning:
+  • Feed the data to be signed:
+    order_L12345|pay_L67890
+  “Sign THIS data”
+
+  Line 3:
+    .digest("hex");  
+
+  Meaning:
+  • Finalize the signature
+  • Output as a readable hex string
+  Example output:
+    "abc123def456..."
+  This is what we expect Razorpay’s signature to be.
 */
