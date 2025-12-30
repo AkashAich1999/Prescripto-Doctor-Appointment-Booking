@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
+import appointmentModel from "../models/appointmentModel.js";
 
 // API : Add New Doctor
 export const addDoctor = async (req, res) => {
@@ -114,6 +115,66 @@ export const allDoctors = async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to fetch doctors" });
   }
 };
+
+// API to Get All Appointments List.
+export const appointmentsAdmin = async (req, res) => {
+    try {
+        const appointments = await appointmentModel.find({});
+        return res.status(200).json({ success:true, appointments });
+    } catch (error) {
+       console.log(error);
+       return res.status(500).json({ success: false, message: error.message }); 
+    }
+}
+
+// API for Appointment Cancellation.
+export const appointmentCancel = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+
+    // 1. Find Appointment
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Appointment Not Found" });
+    }
+
+    // 2. Prevent Double Cancellation
+    if (appointment.cancelled) {
+      return res.status(400).json({ success: false, message: "Appointment Already Cancelled" });
+    }
+
+    // 3. Cancel Appointment.
+    appointment.cancelled = true;
+    await appointment.save();
+
+    // 5. Remove Slot from Doctor's slots_booked
+    const doctor = await doctorModel.findById(appointment.docId);
+
+    if (doctor?.slots_booked) {
+      const { slotDate, slotTime } = appointment;
+
+      if (doctor.slots_booked[slotDate]) {
+        doctor.slots_booked[slotDate] = doctor.slots_booked[slotDate].filter(time => time !== slotTime);
+
+        // Remove date key if empty
+        if (doctor.slots_booked[slotDate].length === 0) {
+          delete doctor.slots_booked[slotDate];
+        }
+
+        // THIS LINE FIXES EVERYTHING
+        doctor.markModified("slots_booked");
+        await doctor.save();
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "Appointment Cancelled Successfully" });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
 
 {/* 
     Q. What is req.file ?

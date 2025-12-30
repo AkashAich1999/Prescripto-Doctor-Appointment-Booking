@@ -9,6 +9,7 @@ const AdminContextProvider = (props) => {
 
   const [token, setToken] = useState(localStorage.getItem("adminToken") || "");
   const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   // Sync token with localStorage
   useEffect(() => {
@@ -64,6 +65,53 @@ const AdminContextProvider = (props) => {
     }
   }
 
+  const getAllAppointments = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/admin/appointments`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // admin token
+        },
+      });
+
+      if (data.success) {
+        setAppointments(data.appointments);
+        console.log(data.appointments);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to fetch appointments"
+      );
+    }
+  };
+
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/admin/cancel-appointment`,
+        { appointmentId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // admin token
+          },
+        }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllAppointments();
+      } else {
+        toast.error(data.message);
+      }
+
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to Cancel Appointment"
+      );
+    }
+  }
+
     const value = {
       token,
       setToken,
@@ -71,6 +119,10 @@ const AdminContextProvider = (props) => {
       doctors,
       getAllDoctors,
       changeAvailability,
+      appointments,
+      setAppointments,
+      getAllAppointments,
+      cancelAppointment
     };
 
     return (
