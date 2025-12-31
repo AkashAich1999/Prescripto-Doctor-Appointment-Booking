@@ -10,6 +10,7 @@ const AdminContextProvider = (props) => {
   const [token, setToken] = useState(localStorage.getItem("adminToken") || "");
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [dashData, setDashData] = useState(null);
 
   // Sync token with localStorage
   useEffect(() => {
@@ -112,6 +113,28 @@ const AdminContextProvider = (props) => {
     }
   }
 
+  const getDashData = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // admin token
+        },
+      });
+
+      if (data.success) {
+        setDashData(data.dashData)
+        console.log(data.dashData);
+      } else {
+        toast.error(data.message);
+      }
+
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to load dashboard data"
+      );
+    }
+  };
+
     const value = {
       token,
       setToken,
@@ -122,7 +145,9 @@ const AdminContextProvider = (props) => {
       appointments,
       setAppointments,
       getAllAppointments,
-      cancelAppointment
+      cancelAppointment,
+      dashData,
+      getDashData
     };
 
     return (

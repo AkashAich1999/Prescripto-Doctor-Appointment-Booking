@@ -4,6 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
+import userModel from "../models/userModel.js"
 
 // API : Add New Doctor
 export const addDoctor = async (req, res) => {
@@ -173,6 +174,31 @@ export const appointmentCancel = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
+
+// API to Get Dashboard Data for Admin Panel.
+export const adminDashboard = async (req, res) => {
+
+  try {
+    const doctorsCount = await doctorModel.countDocuments();
+    const usersCount = await userModel.countDocuments();
+    const appointmentsCount = await appointmentModel.countDocuments();
+
+    const latestAppointments = await appointmentModel.find({}).sort({ createdAt:-1 }).limit(5);
+    
+    const dashData = {
+      doctors: doctorsCount,
+      appointments: appointmentsCount,
+      patients: usersCount,
+      latestAppointments,  // latestAppointments: latestAppointments
+    }
+
+    return res.status(200).json({ success:true, dashData });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Failed to Load Dashboard Data" });
   }
 }
 
