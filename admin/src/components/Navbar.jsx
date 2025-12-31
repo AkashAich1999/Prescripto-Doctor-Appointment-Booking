@@ -3,13 +3,17 @@ import { assets } from "../assets/assets.js"
 import { AdminContext } from "../context/AdminContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { DoctorContext } from "../context/DoctorContext.jsx";
 
 const Navbar = () => {
    const { token, setToken } = useContext(AdminContext);
+   const { setDToken } = useContext(DoctorContext);
    const navigate = useNavigate();
 
    const handleLogout = () => {
     setToken("");            // LOGOUT
+    setDToken("");
+    // navigate("/login", { replace: true });
     navigate("/login");
     toast.success("Logged out successfully");
   };
