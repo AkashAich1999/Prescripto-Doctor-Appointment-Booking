@@ -9,6 +9,7 @@ const DocterContextProvider = (props) => {
 
     const [dtoken, setDToken] = useState(localStorage.getItem("doctorToken") || "");
     const [appointments, setAppointments] = useState([]);
+    const [dashData, setDashData] = useState(null);
 
     const getAppointments = async () => {
       try {
@@ -48,6 +49,7 @@ const DocterContextProvider = (props) => {
         if (data.success) {
           toast.success(data.message);
           getAppointments();
+          getDashData();
         } else {
           toast.error(data.message);
         }
@@ -74,6 +76,7 @@ const DocterContextProvider = (props) => {
         if (data.success) {
           toast.success(data.message);
           getAppointments();
+          getDashData();
         } else {
           toast.error(data.message);
         }
@@ -81,6 +84,29 @@ const DocterContextProvider = (props) => {
         console.error(error);
         toast.error(
           error.response?.data?.message || "Failed to Cancel Appointment"
+        );
+      }
+    };
+
+    const getDashData = async () => {
+      try {
+        const { data } = await axios.get(`${backendUrl}/api/doctor/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${dtoken}`,
+          },
+        });
+
+        if (data.success) {
+          setDashData(data.dashData);
+          console.log(data.dashData);
+        } else {
+          toast.error(data.message);
+        }
+
+      } catch (error) {
+        console.error(error);
+        toast.error(
+          error.response?.data?.message || "Failed to Load Dashboard Data"
         );
       }
     };
@@ -102,7 +128,9 @@ const DocterContextProvider = (props) => {
         appointments, setAppointments,
         getAppointments,
         completeAppointment,
-        cancelAppointment
+        cancelAppointment,
+        dashData, setDashData,
+        getDashData
     }
 
     return (

@@ -157,3 +157,34 @@ export const appointmentCancel = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+// API to Get Dashboard Data for Doctor Panel
+export const doctorDashboard = async (req, res) => {
+  try {
+    const docId = req.doctorId;
+    const appointments = await appointmentModel.find({ docId });
+
+    let earnings = 0;
+    const patientSet = new Set();
+
+    appointments.forEach(item => {
+      if (item.isCompleted || item.payment) {
+        earnings += item.amount;
+      }
+      patientSet.add(item.userId.toString());
+    });
+
+    const dashData = {
+      earnings,
+      appointments: appointments.length,
+      patients: patientSet.size,
+      latestAppointments: [...appointments].reverse().slice(0, 5),
+    }
+
+    res.status(200).json({ success:true, dashData });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
