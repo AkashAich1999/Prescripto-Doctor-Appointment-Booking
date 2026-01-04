@@ -168,9 +168,21 @@ export const doctorDashboard = async (req, res) => {
     const patientSet = new Set();
 
     appointments.forEach(item => {
-      if (item.isCompleted || item.payment) {
+      // if (item.payment && item.isCompleted && !item.cancelled) {
+      //   earnings += item.amount;
+      // }
+
+      // 1️. Completed Appointments (Cash or Online)
+      if (item.isCompleted && !item.cancelled) {
         earnings += item.amount;
       }
+
+      // 2. Online Payments Already Paid but Not Yet Completed.
+      if (item.payment && !item.isCompleted && !item.cancelled) {
+        earnings += item.amount;
+      }
+
+      // Track unique patients
       patientSet.add(item.userId.toString());
     });
 
@@ -182,6 +194,48 @@ export const doctorDashboard = async (req, res) => {
     }
 
     res.status(200).json({ success:true, dashData });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
+
+// API to Get Doctor Profile for Doctor Panel
+export const doctorProfile = async (req, res) => {
+  try {
+    // doctorId comes from authDoctor Middleware (JWT)
+    const docId = req.doctorId;
+    // Fetch Doctor Profile (Exclude password)
+    const profileData = await doctorModel.findById(docId).select("-password");
+
+    // If Doctor Not Found
+    if (!profileData) {
+      return res.status(404).json({ success: false, message: "Doctor not found", });
+    }
+
+    res.status(200).json({ success:true, profileData, });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+}
+
+// API to Update Doctor Profile Data from Doctor Panel
+export const updateDoctorProfile = async (req, res) => {
+  try {
+    // doctorId comes from authDoctor middleware (JWT)
+    const docId = req.doctorId;
+    const { fees, address, available } = req.body;
+
+    const updatedDoctor = await doctorModel.findByIdAndUpdate(docId, { fees, address, available }, { new:true });
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ success: false, message: "Doctor Not Found" });
+    }
+
+    res.status(200).json({ success: true, message: "Profile Updated" });
 
   } catch (error) {
     console.log(error);

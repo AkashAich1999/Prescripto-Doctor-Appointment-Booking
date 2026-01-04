@@ -182,7 +182,7 @@ const MyAppointments = () => {
             </div>
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
-              {!item.cancelled && item.payment && (
+              {!item.cancelled && item.payment && !item.isCompleted && (
                 <button
                   disabled
                   className="sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-50 cursor-not-allowed"
@@ -190,7 +190,7 @@ const MyAppointments = () => {
                   Paid
                 </button>
               )}
-              {!item.cancelled && !item.payment && (
+              {!item.cancelled && !item.payment && !item.isCompleted && (
                 <button
                   onClick={() => appointmentRazorpay(item._id)}
                   className="text-stone-500 text-sm text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
@@ -199,17 +199,19 @@ const MyAppointments = () => {
                 </button>
               )}
               <button
-                disabled={item.cancelled}
+                disabled={item.cancelled || item.isCompleted}
                 onClick={() => cancelAppointment(item._id)}
                 className={`text-sm text-center sm:min-w-48 py-2 border rounded transition-all duration-300
                     ${
                       item.cancelled
                         ? "text-stone-500 bg-gray-100 cursor-not-allowed"
+                        : item.isCompleted
+                        ? "border-green-500 rounded text-green-500 cursor-not-allowed"
                         : "text-red-500 border border-red-500 hover:bg-red-600 hover:text-white"
                     }
                   `}
               >
-                {item.cancelled ? "Cancelled" : "Cancel Appointment"}
+                {item.cancelled ? "Cancelled" : item.isCompleted ? "Completed" : "Cancel Appointment"}
               </button>
             </div>
           </div>

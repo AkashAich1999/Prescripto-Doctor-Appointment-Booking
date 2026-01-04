@@ -10,7 +10,8 @@ const DocterContextProvider = (props) => {
     const [dtoken, setDToken] = useState(localStorage.getItem("doctorToken") || "");
     const [appointments, setAppointments] = useState([]);
     const [dashData, setDashData] = useState(null);
-
+    const [profileData, setProfileData] = useState(null);
+ 
     const getAppointments = async () => {
       try {
         const { data } = await axios.get(`${backendUrl}/api/doctor/appointments`, {
@@ -111,6 +112,28 @@ const DocterContextProvider = (props) => {
       }
     };
 
+    const getProfileData = async () => {
+      try {
+        const { data } = await axios.get(`${backendUrl}/api/doctor/profile`, {
+          headers: {
+            Authorization: `Bearer ${dtoken}`,
+          }
+        });
+
+        if (data.success) {
+          setProfileData(data.profileData);
+        } else {
+          toast.error(data.message);
+        }
+
+      } catch (error) {
+        console.error(error);
+        toast.error(
+          error.response?.data?.message || "Failed to Get Profile Data"
+        );
+      }
+    }
+
     // Sync token with localStorage
       useEffect(() => {
         if (dtoken) {
@@ -130,7 +153,9 @@ const DocterContextProvider = (props) => {
         completeAppointment,
         cancelAppointment,
         dashData, setDashData,
-        getDashData
+        getDashData, 
+        profileData, setProfileData,
+        getProfileData
     }
 
     return (
