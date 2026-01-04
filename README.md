@@ -50,10 +50,10 @@
 <img width="959" height="472" alt="1" src="https://github.com/user-attachments/assets/350f9d7d-a875-4ccf-8ca3-e7af51af8986" />
 
 ### 2.2. Admin Dashboard :
-<img width="959" height="472" alt="2" src="https://github.com/user-attachments/assets/070cfd96-689e-4896-a3f5-483d3242ce42" />
+<img width="959" height="471" alt="2" src="https://github.com/user-attachments/assets/26721262-6bf5-405e-bf44-3164729680aa" />
 
 ### 2.3. All Appointments Page :
-<img width="959" height="473" alt="3" src="https://github.com/user-attachments/assets/c4d33a0f-4c65-438b-9aa1-82a3fc1004d5" />
+<img width="959" height="470" alt="3" src="https://github.com/user-attachments/assets/86995b40-e09c-4da2-909a-f6785ad66c05" />
 
 ### 2.4. Add Doctor Page :
 <img width="959" height="472" alt="4_1" src="https://github.com/user-attachments/assets/e2bbf113-4b55-4dbc-90c5-3371b9a1f24d" />
@@ -65,4 +65,14 @@
 <img width="959" height="347" alt="3" src="https://github.com/user-attachments/assets/a91833c0-085b-478e-9c75-5faa884c2648" />
 
 ### Role 3: Doctor :
-### 3.1. Register & Login Page :
+### 3.1. Login Page :
+<img width="959" height="471" alt="1" src="https://github.com/user-attachments/assets/a1787adf-d8be-499d-a7c2-462da93969e7" />
+
+### 3.2. Dashboard Page : 
+<img width="959" height="470" alt="2" src="https://github.com/user-attachments/assets/f7cd52bb-5020-4dba-bf1b-a9a0532d23f8" />
+
+### 3.3. Appointments Page :
+<img width="959" height="470" alt="3" src="https://github.com/user-attachments/assets/975ed07a-f025-4f0a-ba68-5ddeefeaa127" />
+
+### 3.4. Profile Page :
+<img width="959" height="472" alt="4_1" src="https://github.com/user-attachments/assets/e91cff07-e0d2-4b34-b66a-ade658058193" />
