@@ -76,3 +76,53 @@
 
 ### 3.4. Profile Page :
 <img width="959" height="472" alt="4_1" src="https://github.com/user-attachments/assets/e91cff07-e0d2-4b34-b66a-ade658058193" />
+
+<br><br>  
+  
+To run the project on your system, add the following files :
+
+1. .env file (inside 'backend') : Use your own keys & credentials.
+```
+PORT=8000
+MONGODB_URI=
+CLOUDINARY_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_SECRET_KEY=
+ADMIN_EMAIL=
+ADMIN_PASSWORD_HASH=
+JWT_SECRET=
+RAZORPAY_API_KEY=
+RAZORPAY_API_SECRET=
+CURRENCY="INR"
+NODE_ENV="development"
+``` 
+
+2. hashAdminPassword.js (inside 'backend') : Choose 1 Password & Fill it.
+```javascript
+import bcrypt from "bcrypt";
+
+const password = ""; // your real admin password
+
+const saltRounds = 10;
+const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+console.log("Hashed Password:", hashedPassword);
+```
+
+3. .env file (inside 'frontend' folder) : Fill the VITE_RAZORPAY_API_KEY
+```env
+VITE_BACKEND_URL=http://localhost:8000
+VITE_RAZORPAY_API_KEY=
+```
+
+4. .env file (inside 'admin' folder) :
+```env
+VITE_BACKEND_URL="http://localhost:8000"
+```  
+  
+#### Tech Stack Used :
+• Frontend: `React.js`  
+• Backend: `Node.js`, `Express.js`  
+• Database: `MongoDB`  
+• Payment Gateway: `Razorpay`  
+• Authentication: `JSON Web Token (JWT)`  
