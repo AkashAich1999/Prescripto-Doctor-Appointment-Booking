@@ -1,3 +1,8 @@
+### Deployed Link :  
+Frontend (Client): https://prescripto-doctor-appointment-booking-x05c.onrender.com  
+Admin and Doctor: https://prescripto-doctor-appointment-booking-kyej.onrender.com  
+Backend Deployment: https://prescripto-doctor-appointment-booking-jxsa.onrender.com
+
 ### Role 1: User (Patients) :
 ### 1.1. Register & Login :
 <img width="959" height="472" alt="0_1" src="https://github.com/user-attachments/assets/92edb9e3-6c34-4d60-b66e-5f854eb3ed2c" />
